@@ -1,13 +1,11 @@
 import { useState } from "react";
-import api from "../services/api";
+import api, { saveSession } from "../services/api";
 import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mensagem, setMensagem] = useState("");
-  const [tipoMensagem, setTipoMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [lembrar, setLembrar] = useState(false);
 
@@ -21,18 +19,12 @@ function Login() {
         email,
         senha,
       });
-        if (lembrar) {
-    localStorage.setItem("token", resposta.data.token);
-    sessionStorage.removeItem("token");
-    } else {
-    sessionStorage.setItem("token", resposta.data.token);
-    localStorage.removeItem("token");
-    }
-      setTipoMensagem("sucesso");
-      setMensagem("Login realizado com sucesso!");
-    } catch {
-      setTipoMensagem("erro");
-      setMensagem("E-mail ou senha inválidos.");
+      saveSession(resposta.data.token, lembrar);
+    } catch (error) {
+      setSenha("");
+      setMensagem([400, 401, 403].includes(error.response?.status)
+        ? "E-mail ou senha inválidos."
+        : "Não foi possível entrar. Tente novamente.");
     } finally {
       setCarregando(false);
     }
@@ -59,7 +51,7 @@ function Login() {
             </div>
 
             <div>
-              <strong>OdontoCare</strong>
+              <strong>Thay e Theu</strong>
               <span>Gestão inteligente</span>
             </div>
           </div>
@@ -89,7 +81,7 @@ function Login() {
         <div className="login-content">
           <div className="mobile-brand">
             <div className="brand-icon">O</div>
-            <strong>OdontoCare</strong>
+            <strong>Thay e Theu</strong>
           </div>
 
           <header className="login-header">
@@ -125,22 +117,13 @@ function Login() {
 
                 <input
                   id="senha"
-                  type={mostrarSenha ? "text" : "password"}
+                  type="password"
                   placeholder="Digite sua senha"
                   value={senha}
                   onChange={(event) => setSenha(event.target.value)}
                   autoComplete="current-password"
                   required
                 />
-
-                <button
-                  className="show-password"
-                  type="button"
-                  onClick={() => setMostrarSenha(!mostrarSenha)}
-                  aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
-                >
-                  {mostrarSenha ? "Ocultar" : "Mostrar"}
-                </button>
               </div>
             </div>
 
@@ -154,9 +137,9 @@ function Login() {
                 <span>Lembrar de mim</span>
                 </label>
 
-              <button className="forgot-password" type="button">
+              <button className="forgot-password" type="button" disabled>
                 Esqueceu a senha?
-              </button>
+              </button> <small>Funcionalidade em desenvolvimento</small>
             </div>
 
             <button className="login-button" type="submit" disabled={carregando}>
@@ -174,7 +157,7 @@ function Login() {
             </button>
 
             {mensagem && (
-              <p className={`mensagem ${tipoMensagem}`} role="alert">
+              <p className="mensagem erro" role="alert">
                 {mensagem}
               </p>
             )}

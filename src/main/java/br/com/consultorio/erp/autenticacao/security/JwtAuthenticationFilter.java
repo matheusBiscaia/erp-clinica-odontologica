@@ -2,6 +2,9 @@ package br.com.consultorio.erp.autenticacao.security;
 
 import java.io.IOException;
 
+import io.jsonwebtoken.JwtException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -48,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             email = jwtService.extrairEmail(token);
-        } catch (Exception exception) {
+        } catch (JwtException | IllegalArgumentException exception) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -57,10 +60,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext()
                     .getAuthentication() == null) {
 
-            UserDetails usuario =
-                    usuarioDetailsService.loadUserByUsername(email);
+            UserDetails usuario;
+            try {
+                usuario = usuarioDetailsService.loadUserByUsername(email);
+            } catch (UsernameNotFoundException exception) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            if (jwtService.tokenValido(token, usuario.getUsername())) {
+            if (usuario.isEnabled() && jwtService.tokenValido(token, usuario.getUsername())) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 usuario,
